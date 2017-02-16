@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        'App\Console\Commands\TestProxyCommand',
+        'App\Console\Commands\ParserCommand'
     ];
 
     /**
@@ -26,6 +27,9 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')
         //          ->hourly();
+
+        $schedule->command('proxy:test')->hourly();
+        $schedule->command('parser:list')->daily();
     }
 
     /**

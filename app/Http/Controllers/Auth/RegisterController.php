@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\ConfirmUsers;
 use App\User;
 use App\Http\Controllers\Controller;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
@@ -50,6 +54,7 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => 'required|max:255',
             'email' => 'required|email|max:255|unique:users',
+            'username' => 'required|max:255|unique:users',
             'password' => 'required|min:6|confirmed',
         ]);
     }
@@ -64,8 +69,52 @@ class RegisterController extends Controller
     {
         return User::create([
             'name' => $data['name'],
+            'username' => $data['username'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
+            'role' => User::CUSTOMER
         ]);
+    }
+
+    public function register(Request $request)
+    {
+        $this->validator($request->all())->validate();
+
+        event(new Registered($user = $this->create($request->all())));
+        // Присваиваем роль
+        if($user){
+            $user->role = User::CUSTOMER;
+            $user->save();
+
+            $model=new ConfirmUsers; //создаем экземпляр нашей модели
+            $model->email = $user->email; //вставляем в таблицу email
+            $model->token = str_random(32); //вставляем в таблицу токен
+            $model->save();      // сохраняем все данные в таблицу
+
+            //отправляем ссылку с токеном пользователю
+            Mail::send('emails.confirm',['token' => $model->token],function($u) use ($user)
+            {
+                $u->from('admin@site.ru');
+                $u->to($user->email);
+                $u->subject('Confirm registration');
+            });
+        }
+
+        
+        // send email
+        
+
+        return redirect('home');
+    }
+
+    public function confirm($token)
+    {
+        $model = ConfirmUsers::where('token','=',$token)->firstOrFail(); 
+        $user = User::where('email','=',$model->email)->first(); 
+        $user->status=1; 
+        $user->save();  
+        $model->delete(); 
+        
+        return view('auth.confirm');
     }
 }

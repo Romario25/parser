@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Policies\ProxyPolicy;
+use App\Proxy;
+use App\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -13,7 +16,8 @@ class AuthServiceProvider extends ServiceProvider
      * @var array
      */
     protected $policies = [
-        'App\Model' => 'App\Policies\ModelPolicy',
+        //'App\Model' => 'App\Policies\ModelPolicy',
+        Proxy::class => ProxyPolicy::class
     ];
 
     /**
@@ -26,5 +30,8 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         //
+        Gate::define('user', function (User $user) {
+            return $user->isAdmin();
+        });
     }
 }

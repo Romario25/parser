@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
@@ -17,6 +20,8 @@ class LoginController extends Controller
     | to conveniently provide its functionality to your applications.
     |
     */
+
+    protected $username = 'username';
 
     use AuthenticatesUsers;
 
@@ -36,4 +41,19 @@ class LoginController extends Controller
     {
         $this->middleware('guest', ['except' => 'logout']);
     }
+
+    public function username()
+    {
+        return 'username';
+    }
+
+
+    protected function credentials(Request $request)
+    {
+
+        return array_merge($request->only($this->username(), 'password'), ['status' => 1, 'role' => User::CUSTOMER]);
+
+    }
+
+    
 }
